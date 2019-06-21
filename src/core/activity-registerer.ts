@@ -18,30 +18,26 @@ export default class ActivityRegisterer
             && this.isGuildSetUp(guild))
         {
             guild.users.set(member.id, new Date())
-            await this.markActiveIfNotIgnored(guild, member, true)
+            await this.markActiveIfNotIgnored(guild, member)
             await guild.save()
         }
     }
 
-    private async markActiveIfNotIgnored(guild: Guild, member: BotGuildMember, isActive: boolean)
+    private async markActiveIfNotIgnored(guild: Guild, member: BotGuildMember)
     {
-        const addRole = isActive ? guild.activeRoleId : guild.inactiveRoleId
-        const removeRole = isActive ? guild.inactiveRoleId : guild.activeRoleId
-
         try
         {
             if (this.isMemberIgnored(guild, member))
                 return
 
-            if (addRole && addRole !== "disabled")
-                await member.addRole(addRole);
+            await member.addRole(guild.activeRoleId);
 
-            if (removeRole && removeRole !== "disabled")
-                await member.removeRole(removeRole)
+            if (guild.inactiveRoleId && guild.inactiveRoleId !== "disabled")
+                await member.removeRole(guild.inactiveRoleId)
         }
         catch (e)
         {
-            Logger.debugLogError(`Error marking user ${member.username} ${isActive ? "active" : "inactive"} in guild ${guild.name}.`, e)
+            Logger.debugLogError(`Error marking user ${member.username} active in guild ${guild.name}.`, e)
         }
     }
 
