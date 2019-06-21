@@ -1,6 +1,7 @@
 import { BotGuildMember, Client, Logger } from "disharmony";
 import Guild from "../models/guild";
 import Message from "../models/message";
+import { Permissions } from "discord.js";
 
 export default class ActivityRegisterer
 {
@@ -8,6 +9,17 @@ export default class ActivityRegisterer
     {
         this.client.onMessage.sub(message => this.registerActivity(message.guild, message.member))
         this.client.onVoiceStateUpdate.sub(member => this.registerActivity(new Guild(member.djs.guild), member))
+    }
+
+    private async registerVoiceActivity(member: BotGuildMember)
+    {
+        const botMember = await member.djs.guild.fetchMember(this.client.djs.user)
+        const botPerms = member.djs.voiceChannel.permissionsFor(botMember);
+
+        if (botPerms === null || !botPerms.has("VIEW_CHANNEL"))
+            return;
+
+        this.registerActivity(new Guild(member.djs.guild), member);
     }
 
     private async registerActivity(guild: Guild, member: BotGuildMember)
