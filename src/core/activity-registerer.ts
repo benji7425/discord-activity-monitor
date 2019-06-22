@@ -1,16 +1,21 @@
 import { BotGuildMember, Client, Logger } from "disharmony";
 import Guild from "../models/guild";
 import Message from "../models/message";
+import { TextChannel } from "discord.js";
 
 export default class ActivityRegisterer
 {
     public startListening()
     {
-        this.client.onMessage.sub(message => this.registerActivity(message.guild, message.member))
-        this.client.onVoiceStateUpdate.sub(member => this.registerActivity(new Guild(member.djs.guild), member))
+        this.client.onMessage.sub(message => this.registerActivity(message.guild, message.member, (message.djs.channel as TextChannel).name))
+        this.client.djs.on("voiceStateUpdate", (oldMember, newMember) => 
+            this.registerActivity(
+                new Guild(newMember.guild),
+                new BotGuildMember(newMember),
+                (newMember.voiceChannel || oldMember.voiceChannel).name))
     }
 
-    private async registerActivity(guild: Guild, member: BotGuildMember)
+    private async registerActivity(guild: Guild, member: BotGuildMember, channelName: String)
     {
         await guild.loadDocument()
         if (guild
@@ -18,30 +23,26 @@ export default class ActivityRegisterer
             && this.isGuildSetUp(guild))
         {
             guild.users.set(member.id, new Date())
-            await this.markActiveIfNotIgnored(guild, member, true)
+            await this.markActiveIfNotIgnored(guild, member, channelName)
             await guild.save()
         }
     }
 
-    private async markActiveIfNotIgnored(guild: Guild, member: BotGuildMember, isActive: boolean)
+    private async markActiveIfNotIgnored(guild: Guild, member: BotGuildMember, channelName: String)
     {
-        const addRole = isActive ? guild.activeRoleId : guild.inactiveRoleId
-        const removeRole = isActive ? guild.inactiveRoleId : guild.activeRoleId
-
         try
         {
             if (this.isMemberIgnored(guild, member))
                 return
 
-            if (addRole && addRole !== "disabled")
-                await member.addRole(addRole);
+            await member.djs.addRole(guild.activeRoleId, `Activity detected in ${channelName}.`);
 
-            if (removeRole && removeRole !== "disabled")
-                await member.removeRole(removeRole)
+            if (guild.inactiveRoleId && guild.inactiveRoleId !== "disabled")
+                await member.removeRole(guild.inactiveRoleId)
         }
         catch (e)
         {
-            Logger.debugLogError(`Error marking user ${member.username} ${isActive ? "active" : "inactive"} in guild ${guild.name}.`, e)
+            Logger.debugLogError(`Error marking user ${member.username} active in guild ${guild.name}.`, e)
         }
     }
 
