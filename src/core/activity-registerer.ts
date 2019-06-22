@@ -1,7 +1,6 @@
 import { BotGuildMember, Client, Logger } from "disharmony";
 import Guild from "../models/guild";
 import Message from "../models/message";
-import { Permissions } from "discord.js";
 
 export default class ActivityRegisterer
 {
