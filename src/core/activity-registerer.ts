@@ -1,31 +1,29 @@
 import { BotGuildMember, Client, Logger } from "disharmony";
 import Guild from "../models/guild";
 import Message from "../models/message";
-import { TextChannel } from "discord.js";
+import { TextChannel, GuildMember } from "discord.js";
 
 export default class ActivityRegisterer
 {
     public startListening()
     {
         this.client.onMessage.sub(message => this.registerActivity(message.guild, message.member, (message.djs.channel as TextChannel).name))
-        this.client.djs.on("voiceStateUpdate", (oldMember, newMember) => 
-            this.registerActivity(
-                new Guild(newMember.guild),
-                new BotGuildMember(newMember),
-                (newMember.voiceChannel || oldMember.voiceChannel).name))
+        this.client.djs.on("voiceStateUpdate", (oldMember, newMember) => this.registerVoiceActivity(oldMember, newMember))
     }
 
-    private async registerVoiceActivity(member: BotGuildMember)
+    private async registerVoiceActivity(oldMember: GuildMember, newMember: GuildMember)
     {
-        const botMember = await member.djs.guild.fetchMember(this.client.djs.user)
-        const botPerms = member.djs.voiceChannel.permissionsFor(botMember);
+        const voiceChannel = (newMember.voiceChannel || oldMember.voiceChannel);
+
+        const botMember = await oldMember.guild.fetchMember(this.client.djs.user)
+        const botPerms = voiceChannel.permissionsFor(botMember);
 
         if (botPerms === null || !botPerms.has("VIEW_CHANNEL"))
             return;
 
-        this.registerActivity(new Guild(member.djs.guild), member);
+        this.registerActivity(new Guild(oldMember.guild), new BotGuildMember(oldMember), voiceChannel.name);
     }
-    
+
     private async registerActivity(guild: Guild, member: BotGuildMember, channelName: String)
     {
         await guild.loadDocument()
