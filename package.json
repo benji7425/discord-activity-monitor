@@ -7,8 +7,8 @@
     "@hapi/joi": "^15.1.0",
     "@types/hapi__joi": "^15.0.3",
     "@types/node": "^11.13.0",
-    "disharmony": "^2.0.5",
-    "typescript": "^3.4.1"
+    "disharmony": "git+https://github.com/benjihiggins/disharmony.git#v2.0.6",
+    "typescript": "^3.9.7"
   },
   "description": "Discord bot to add/remove roles based on user activity",
   "devDependencies": {
