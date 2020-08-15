@@ -25,7 +25,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           repository: benjihiggins/discord-activity-monitor
-          tags: ${{ env.VERSION_NUMBER }}
+          tags: ${{ env.VERSION_NUMBER }},latest
 
       - name: Create release
         uses: actions/create-release@v1
